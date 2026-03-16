@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Search, Sparkles } from "lucide-react";
 import { apps, getAllTemplates, getAllTypes, AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
 import AppDetailSheet from "@/components/AppDetailSheet";
 import BottomNav from "@/components/BottomNav";
-import { fetchAllStats, incrementTryouts, incrementHearts, decrementHearts } from "@/lib/stats";
+import { fetchAllStats, incrementHearts, decrementHearts } from "@/lib/stats";
+import { useLikedApps } from "@/hooks/useLikedApps";
 
 const Index = () => {
   const [search, setSearch] = useState("");
@@ -12,21 +13,13 @@ const Index = () => {
   const [detailApp, setDetailApp] = useState<AppMeta | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [scrollToScreenshots, setScrollToScreenshots] = useState(false);
-  const [likedApps, setLikedApps] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem("liked_apps");
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
+  const { isLiked, toggleLike } = useLikedApps();
   const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
 
   useEffect(() => {
     fetchAllStats().then(setStatsMap);
   }, []);
 
-  // Check URL for shared tool
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const toolId = params.get("tool");
@@ -71,22 +64,14 @@ const Index = () => {
   const handleCloseDetail = () => setDetailVisible(false);
 
   const handleHeart = (appId: string) => {
-    const wasLiked = likedApps.has(appId);
-    setLikedApps((prev) => {
-      const next = new Set(prev);
-      if (next.has(appId)) next.delete(appId);
-      else next.add(appId);
-      localStorage.setItem("liked_apps", JSON.stringify(Array.from(next)));
-      return next;
-    });
+    const wasLiked = isLiked(appId);
+    toggleLike(appId);
     if (wasLiked) {
-      decrementHearts(appId);
       setStatsMap((prev) => ({
         ...prev,
         [appId]: { ...prev[appId], hearts: Math.max((prev[appId]?.hearts || 1) - 1, 0) },
       }));
     } else {
-      incrementHearts(appId);
       setStatsMap((prev) => ({
         ...prev,
         [appId]: { ...prev[appId], hearts: (prev[appId]?.hearts || 0) + 1 },
@@ -96,20 +81,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Sticky top bar */}
       <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles size={18} className="text-primary" />
             <h1 className="text-lg font-bold font-display gradient-text">ToolBox</h1>
           </div>
-
-          {/* Search */}
           <div className="relative">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search tools..."
@@ -119,14 +98,10 @@ const Index = () => {
             />
           </div>
         </div>
-
-        {/* Filter chips */}
         <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
           <button
             className={`text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap font-semibold shrink-0 transition-all duration-200 ${
-              !activeFilter
-                ? "bg-primary text-primary-foreground glow-primary"
-                : "glass text-secondary-foreground"
+              !activeFilter ? "bg-primary text-primary-foreground glow-primary" : "glass text-secondary-foreground"
             }`}
             onClick={() => setActiveFilter(null)}
           >
@@ -136,13 +111,9 @@ const Index = () => {
             <button
               key={chip}
               className={`text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap font-semibold shrink-0 transition-all duration-200 ${
-                activeFilter === chip
-                  ? "bg-primary text-primary-foreground glow-primary"
-                  : "glass text-secondary-foreground"
+                activeFilter === chip ? "bg-primary text-primary-foreground glow-primary" : "glass text-secondary-foreground"
               }`}
-              onClick={() =>
-                setActiveFilter(activeFilter === chip ? null : chip)
-              }
+              onClick={() => setActiveFilter(activeFilter === chip ? null : chip)}
             >
               {chip}
             </button>
@@ -150,13 +121,12 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Card grid */}
       <div className="px-3 py-4 grid grid-cols-2 gap-3">
         {filteredApps.map((app) => (
           <ToolCard
             key={app.id}
             app={app}
-            isLiked={likedApps.has(app.id)}
+            isLiked={isLiked(app.id)}
             onTapScreenshot={handleTapScreenshot}
             onTapName={handleTapName}
             onHeart={handleHeart}
@@ -172,13 +142,12 @@ const Index = () => {
         </div>
       )}
 
-      {/* Detail sheet */}
       <AppDetailSheet
         app={detailApp}
         visible={detailVisible}
         onClose={handleCloseDetail}
         scrollToScreenshots={scrollToScreenshots}
-        isLiked={detailApp ? likedApps.has(detailApp.id) : false}
+        isLiked={detailApp ? isLiked(detailApp.id) : false}
         onHeart={handleHeart}
         hearts={detailApp ? statsMap[detailApp.id]?.hearts ?? detailApp.hearts : 0}
         tryouts={detailApp ? statsMap[detailApp.id]?.tryouts ?? detailApp.tryouts : 0}
