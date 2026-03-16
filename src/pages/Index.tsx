@@ -23,9 +23,15 @@ const Index = () => {
       return new Set();
     }
   });
+  const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
   const lastViewedAppId = useRef<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
+
+  // Fetch stats from Supabase
+  useEffect(() => {
+    fetchAllStats().then(setStatsMap);
+  }, []);
 
   const allTemplates = getAllTemplates();
   const allTypes = getAllTypes();
