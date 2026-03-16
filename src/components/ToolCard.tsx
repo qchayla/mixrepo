@@ -3,11 +3,12 @@ import { AppMeta } from "@/data/apps";
 import { thumbnails } from "@/data/thumbnails";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 interface ToolCardProps {
   app: AppMeta;
   isLiked: boolean;
-  onTap: (app: AppMeta) => void;
+  onTap: (app: AppMeta, rect: DOMRect) => void;
   onHeart: (appId: string) => void;
   hearts: number;
   tryouts: number;
@@ -21,6 +22,7 @@ const typeColors: Record<string, string> = {
 
 const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardProps) => {
   const navigate = useNavigate();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,13 +34,21 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
     });
   };
 
+  const handleTap = () => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      onTap(app, rect);
+    }
+  };
+
   const thumb = thumbnails[app.id];
 
   return (
     <div className="flex flex-col gap-1.5">
       <div
+        ref={cardRef}
         className="bg-card rounded-lg border border-border overflow-hidden active:scale-[0.98] transition-transform duration-100 cursor-pointer"
-        onClick={() => onTap(app)}
+        onClick={handleTap}
       >
         {/* Thumbnail */}
         <div className="aspect-[4/3] bg-secondary overflow-hidden">
@@ -95,7 +105,7 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
         </div>
       </div>
 
-      {/* Buttons — stacked vertically for mobile */}
+      {/* Buttons */}
       <button
         className="flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-[11px] font-medium py-2 rounded-lg active:scale-95 transition-transform w-full"
         onClick={handleCopy}
