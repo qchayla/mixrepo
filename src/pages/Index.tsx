@@ -72,7 +72,8 @@ const Index = () => {
   });
 
   const handleTapCard = useCallback(
-    (app: AppMeta) => {
+    (app: AppMeta, rect: DOMRect) => {
+      setOriginRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
       // Increment tryouts
       incrementTryouts(app.id);
       setStatsMap(prev => ({
