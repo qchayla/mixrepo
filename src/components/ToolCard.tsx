@@ -18,7 +18,7 @@ const typeColors: Record<string, string> = {
   "Editor Choice": "bg-accent/10 text-accent",
 };
 
-const ToolCard = ({ app, isLiked, onTap, onHeart }: ToolCardProps) => {
+const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardProps) => {
   const navigate = useNavigate();
 
   const handleCopy = (e: React.MouseEvent) => {
