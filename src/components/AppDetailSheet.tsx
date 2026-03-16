@@ -1,4 +1,4 @@
-import { X, Share2, Copy, ArrowRight, Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Share2, Copy, ArrowRight, Heart } from "lucide-react";
 import { AppMeta, getRemixesForApp } from "@/data/apps";
 import { screenshots } from "@/data/thumbnails";
 import { useNavigate } from "react-router-dom";
@@ -36,10 +36,12 @@ const AppDetailSheet = ({
   const touchStartRef = useRef<{ y: number; time: number } | null>(null);
   const [animState, setAnimState] = useState<"hidden" | "entering" | "visible" | "leaving">("hidden");
   const [activeSlide, setActiveSlide] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (visible && animState === "hidden") {
       setActiveSlide(0);
+      setLoadedImages(new Set());
       setAnimState("entering");
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setAnimState("visible"));
@@ -49,9 +51,9 @@ const AppDetailSheet = ({
 
   useEffect(() => {
     if (animState === "visible" && scrollRef.current) {
-      if (scrollToScreenshots && screenshotRef.current) {
+      if (scrollToScreenshots) {
         scrollRef.current.scrollTop = 0;
-      } else if (!scrollToScreenshots && descriptionRef.current) {
+      } else if (descriptionRef.current) {
         descriptionRef.current.scrollIntoView({ behavior: "instant", block: "start" });
       }
     }
@@ -119,7 +121,6 @@ const AppDetailSheet = ({
     touchStartRef.current = null;
   }, [dragY, handleClose]);
 
-  // Carousel scroll handler
   const handleCarouselScroll = useCallback(() => {
     if (!carouselRef.current) return;
     const el = carouselRef.current;
@@ -134,6 +135,10 @@ const AppDetailSheet = ({
       left: index * carouselRef.current.offsetWidth,
       behavior: "smooth",
     });
+  };
+
+  const handleImageLoad = (index: number) => {
+    setLoadedImages((prev) => new Set(prev).add(index));
   };
 
   if (animState === "hidden") return null;
@@ -179,7 +184,7 @@ const AppDetailSheet = ({
         </div>
 
         {/* Close + Share */}
-        <div className="flex items-center justify-between px-4 pb-2">
+        <div className="flex items-center justify-between px-4 pb-2 relative z-30">
           <button
             className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform"
             onClick={handleClose}
@@ -206,10 +211,11 @@ const AppDetailSheet = ({
           </div>
         </div>
 
-        {/* Scrollable content */}
+        {/* Scrollable content — screenshots are sticky, text covers them */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-28">
-          {/* Swipeable screenshots — sticky so they stay visible above text when scrolling */}
-          <div ref={screenshotRef} className="px-4 relative z-10">
+
+          {/* Screenshots — sticky so they stay behind as text scrolls over */}
+          <div ref={screenshotRef} className="sticky top-0 z-0 px-4">
             {appScreenshots.length > 0 && (
               <div className="relative">
                 <div
@@ -221,17 +227,30 @@ const AppDetailSheet = ({
                   {appScreenshots.map((src, i) => (
                     <div
                       key={i}
-                      className="w-full shrink-0 snap-center"
+                      className="w-full shrink-0 snap-center relative"
                       style={{ aspectRatio: "3/4" }}
                     >
+                      {/* Shimmer skeleton */}
+                      {!loadedImages.has(i) && (
+                        <div className="absolute inset-0 rounded-2xl overflow-hidden bg-secondary">
+                          <div
+                            className="absolute inset-0 animate-shimmer"
+                            style={{
+                              backgroundImage: "linear-gradient(90deg, transparent 0%, hsl(var(--muted-foreground) / 0.08) 50%, transparent 100%)",
+                              backgroundSize: "200% 100%",
+                            }}
+                          />
+                        </div>
+                      )}
                       <img
                         src={src}
                         alt={`${app.name} screenshot ${i + 1}`}
                         className="w-full h-full object-cover rounded-2xl"
+                        onLoad={() => handleImageLoad(i)}
                         style={{
-                          opacity: isVisible ? 1 : 0,
-                          transform: isVisible ? "scale(1)" : "scale(0.95)",
-                          transition: `opacity 400ms ease ${100 + i * 80}ms, transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1) ${100 + i * 80}ms`,
+                          opacity: isVisible && loadedImages.has(i) ? 1 : 0,
+                          transform: isVisible && loadedImages.has(i) ? "scale(1)" : "scale(0.97)",
+                          transition: `opacity 500ms ease, transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
                         }}
                       />
                     </div>
@@ -258,87 +277,95 @@ const AppDetailSheet = ({
             )}
           </div>
 
-          {/* Description */}
-          <div ref={descriptionRef} className="px-4 mt-6">
-            <h2
-              className="text-xl font-bold font-display"
-              style={{
-                opacity: isVisible ? 1 : 0,
-                transform: isVisible ? "translateY(0)" : "translateY(12px)",
-                transition: "opacity 300ms ease 100ms, transform 300ms ease 100ms",
-              }}
-            >
-              {app.name}
-            </h2>
-            <div
-              className="flex gap-1.5 mt-2 flex-wrap"
-              style={{
-                opacity: isVisible ? 1 : 0,
-                transition: "opacity 300ms ease 150ms",
-              }}
-            >
-              {[...app.type, ...app.templates].map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] px-2.5 py-1 rounded-full font-medium bg-secondary text-secondary-foreground"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <p
-              className="text-sm text-muted-foreground mt-4 leading-relaxed"
-              style={{
-                opacity: isVisible ? 1 : 0,
-                transform: isVisible ? "translateY(0)" : "translateY(8px)",
-                transition: "opacity 300ms ease 200ms, transform 300ms ease 200ms",
-              }}
-            >
-              {app.description}
-            </p>
-            <p className="text-xs text-muted-foreground/60 mt-2">
-              {tryouts.toLocaleString()} people tried this · {hearts} likes
-            </p>
-          </div>
-
-          {/* Remixes */}
-          {remixes.length > 0 && (
-            <div className="px-4 mt-8">
-              <h3 className="text-sm font-semibold font-display text-muted-foreground uppercase tracking-wider mb-3">
-                Community Remixes
-              </h3>
-              <div className="flex flex-col gap-2">
-                {remixes.map((remix) => (
-                  <div
-                    key={remix.id}
-                    className="glass rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `Pull this GitHub repo and deploy it for me: ${remix.repo}`
-                      );
-                      toast.success("Remix prompt copied!");
-                    }}
+          {/* Description panel — covers screenshots as user scrolls */}
+          <div
+            ref={descriptionRef}
+            className="relative z-10 bg-card rounded-t-3xl -mt-6 pt-6 min-h-[60vh]"
+            style={{
+              boxShadow: "0 -20px 40px -10px hsl(var(--background) / 0.8)",
+            }}
+          >
+            <div className="px-5">
+              <h2
+                className="text-xl font-bold font-display"
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? "translateY(0)" : "translateY(12px)",
+                  transition: "opacity 300ms ease 100ms, transform 300ms ease 100ms",
+                }}
+              >
+                {app.name}
+              </h2>
+              <div
+                className="flex gap-1.5 mt-2.5 flex-wrap"
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transition: "opacity 300ms ease 150ms",
+                }}
+              >
+                {[...app.type, ...app.templates].map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] px-2.5 py-1 rounded-full font-medium bg-secondary text-secondary-foreground"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{remix.description}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          by {remix.author} · {remix.useCase}
-                        </p>
-                      </div>
-                      <Copy size={12} className="text-muted-foreground shrink-0 ml-2 mt-0.5" />
-                    </div>
-                  </div>
+                    {tag}
+                  </span>
                 ))}
               </div>
+              <p
+                className="text-sm text-muted-foreground mt-4 leading-relaxed"
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? "translateY(0)" : "translateY(8px)",
+                  transition: "opacity 300ms ease 200ms, transform 300ms ease 200ms",
+                }}
+              >
+                {app.description}
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-3">
+                {tryouts.toLocaleString()} people tried this · {hearts} likes
+              </p>
             </div>
-          )}
 
-          <div className="h-8" />
+            {/* Remixes */}
+            {remixes.length > 0 && (
+              <div className="px-5 mt-8">
+                <h3 className="text-sm font-semibold font-display text-muted-foreground uppercase tracking-wider mb-3">
+                  Community Remixes
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {remixes.map((remix) => (
+                    <div
+                      key={remix.id}
+                      className="glass rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `Pull this GitHub repo and deploy it for me: ${remix.repo}`
+                        );
+                        toast.success("Remix prompt copied!");
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{remix.description}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            by {remix.author} · {remix.useCase}
+                          </p>
+                        </div>
+                        <Copy size={12} className="text-muted-foreground shrink-0 ml-2 mt-0.5" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="h-8" />
+          </div>
         </div>
 
         {/* Floating "Own It!" button */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-card via-card/95 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-card via-card/95 to-transparent z-20">
           <button
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-electric text-primary-foreground font-semibold text-sm active:scale-[0.97] transition-transform glow-primary flex items-center justify-center gap-2"
             onClick={handleOwnIt}
