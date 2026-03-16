@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import Remixes from "./pages/Remixes.tsx";
 import AiGuide from "./pages/AiGuide.tsx";
+import SubmitTool from "./pages/SubmitTool.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -18,6 +19,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/remixes/:appId" element={<Remixes />} />
           <Route path="/ai-guide" element={<AiGuide />} />
+          <Route path="/submit" element={<SubmitTool />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
