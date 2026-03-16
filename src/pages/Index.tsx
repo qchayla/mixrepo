@@ -17,6 +17,7 @@ const Index = () => {
   const [currentApp, setCurrentApp] = useState<AppMeta | null>(null);
   const [iframeSrc, setIframeSrc] = useState("");
   const [activeTemplate, setActiveTemplate] = useState("");
+  const [originRect, setOriginRect] = useState<CardRect | null>(null);
   const [likedApps, setLikedApps] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem("liked_apps");
