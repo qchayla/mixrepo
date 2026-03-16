@@ -4,6 +4,7 @@ import { apps, getAllTemplates, getAllTypes, AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
 import FullscreenModal from "@/components/FullscreenModal";
 import { useNavigate } from "react-router-dom";
+import { fetchAllStats, incrementTryouts, incrementHearts, decrementHearts } from "@/lib/stats";
 
 const IDLE_TIMEOUT = 5 * 60 * 1000;
 
@@ -22,9 +23,15 @@ const Index = () => {
       return new Set();
     }
   });
+  const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
   const lastViewedAppId = useRef<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
+
+  // Fetch stats from Supabase
+  useEffect(() => {
+    fetchAllStats().then(setStatsMap);
+  }, []);
 
   const allTemplates = getAllTemplates();
   const allTypes = getAllTypes();
@@ -63,6 +70,13 @@ const Index = () => {
 
   const handleTapCard = useCallback(
     (app: AppMeta) => {
+      // Increment tryouts
+      incrementTryouts(app.id);
+      setStatsMap(prev => ({
+        ...prev,
+        [app.id]: { ...prev[app.id], tryouts: (prev[app.id]?.tryouts || app.tryouts) + 1 }
+      }));
+
       if (lastViewedAppId.current && lastViewedAppId.current !== app.id) {
         setIframeSrc("about:blank");
         setTimeout(() => {
@@ -96,6 +110,7 @@ const Index = () => {
   };
 
   const handleHeart = (appId: string) => {
+    const wasLiked = likedApps.has(appId);
     setLikedApps((prev) => {
       const next = new Set(prev);
       if (next.has(appId)) next.delete(appId);
@@ -103,6 +118,19 @@ const Index = () => {
       localStorage.setItem("liked_apps", JSON.stringify(Array.from(next)));
       return next;
     });
+    if (wasLiked) {
+      decrementHearts(appId);
+      setStatsMap(prev => ({
+        ...prev,
+        [appId]: { ...prev[appId], hearts: Math.max((prev[appId]?.hearts || 1) - 1, 0) }
+      }));
+    } else {
+      incrementHearts(appId);
+      setStatsMap(prev => ({
+        ...prev,
+        [appId]: { ...prev[appId], hearts: (prev[appId]?.hearts || 0) + 1 }
+      }));
+    }
   };
 
   return (
@@ -175,6 +203,8 @@ const Index = () => {
             isLiked={likedApps.has(app.id)}
             onTap={handleTapCard}
             onHeart={handleHeart}
+            hearts={statsMap[app.id]?.hearts ?? app.hearts}
+            tryouts={statsMap[app.id]?.tryouts ?? app.tryouts}
           />
         ))}
       </div>

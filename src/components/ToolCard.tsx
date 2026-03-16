@@ -8,6 +8,8 @@ interface ToolCardProps {
   isLiked: boolean;
   onTap: (app: AppMeta) => void;
   onHeart: (appId: string) => void;
+  hearts: number;
+  tryouts: number;
 }
 
 const typeColors: Record<string, string> = {
@@ -16,7 +18,7 @@ const typeColors: Record<string, string> = {
   "Editor Choice": "bg-accent/10 text-accent",
 };
 
-const ToolCard = ({ app, isLiked, onTap, onHeart }: ToolCardProps) => {
+const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardProps) => {
   const navigate = useNavigate();
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -80,11 +82,11 @@ const ToolCard = ({ app, isLiked, onTap, onHeart }: ToolCardProps) => {
                 size={13}
                 className={isLiked ? "fill-coral text-coral" : ""}
               />
-              {app.hearts}
+              {hearts}
             </button>
             <span className="flex items-center gap-1">
               <Eye size={13} />
-              {app.tryouts}
+              {tryouts}
             </span>
           </div>
         </div>
