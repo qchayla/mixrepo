@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Copy, Eye } from "lucide-react";
 import { apps, getRemixesForApp } from "@/data/apps";
 import { toast } from "sonner";
+import BottomNav from "@/components/BottomNav";
 
 const Remixes = () => {
   const { appId } = useParams<{ appId: string }>();
@@ -25,7 +26,7 @@ const Remixes = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
         <button
@@ -109,6 +110,7 @@ const Remixes = () => {
           )}
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 };

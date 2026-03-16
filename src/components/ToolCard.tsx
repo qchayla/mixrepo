@@ -1,5 +1,6 @@
-import { Heart, Eye, Copy } from "lucide-react";
+import { Heart, Eye, Copy, ArrowRight } from "lucide-react";
 import { AppMeta } from "@/data/apps";
+import { thumbnails } from "@/data/thumbnails";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -31,36 +32,38 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
     });
   };
 
+  const thumb = thumbnails[app.id];
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <div
         className="bg-card rounded-lg border border-border overflow-hidden active:scale-[0.98] transition-transform duration-100 cursor-pointer"
         onClick={() => onTap(app)}
       >
         {/* Thumbnail */}
-        <div className="aspect-[4/3] bg-secondary flex items-center justify-center">
-          <span className="text-3xl">
-            {app.id === "stock-tracker" ? "📦" :
-             app.id === "invoice-maker" ? "🧾" :
-             app.id === "shift-scheduler" ? "📅" :
-             app.id === "expense-log" ? "💰" :
-             app.id === "menu-builder" ? "🍽️" :
-             app.id === "attendance-app" ? "✅" :
-             app.id === "pos-lite" ? "🛒" :
-             app.id === "booking-page" ? "📋" : "🔧"}
-          </span>
+        <div className="aspect-[4/3] bg-secondary overflow-hidden">
+          {thumb ? (
+            <img
+              src={thumb}
+              alt={app.name}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-2xl">🔧</div>
+          )}
         </div>
 
         {/* Content */}
-        <div className="p-3">
-          <h3 className="text-sm font-medium leading-tight truncate">{app.name}</h3>
+        <div className="p-2.5">
+          <h3 className="text-[13px] font-medium leading-tight truncate">{app.name}</h3>
 
           {/* Tags */}
-          <div className="flex gap-1 mt-1.5 flex-wrap">
-            {[...app.type, ...app.templates].slice(0, 3).map((tag) => (
+          <div className="flex gap-1 mt-1 flex-wrap">
+            {[...app.type, ...app.templates].slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                   typeColors[tag] || "bg-secondary text-muted-foreground"
                 }`}
               >
@@ -70,7 +73,7 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
             <button
               className="flex items-center gap-1 active:scale-110 transition-transform"
               onClick={(e) => {
@@ -79,38 +82,37 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
               }}
             >
               <Heart
-                size={13}
+                size={12}
                 className={isLiked ? "fill-coral text-coral" : ""}
               />
               {hearts}
             </button>
             <span className="flex items-center gap-1">
-              <Eye size={13} />
+              <Eye size={12} />
               {tryouts}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Buttons below card */}
-      <div className="flex gap-1.5">
-        <button
-          className="flex-1 flex items-center justify-center gap-1 bg-primary text-primary-foreground text-xs font-medium py-2 rounded-lg active:scale-95 transition-transform"
-          onClick={handleCopy}
-        >
-          <Copy size={12} />
-          Copy Repo
-        </button>
-        <button
-          className="flex-1 text-xs font-medium py-2 rounded-lg border border-border text-foreground active:scale-95 transition-transform"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/remixes/${app.id}`);
-          }}
-        >
-          See Remixes →
-        </button>
-      </div>
+      {/* Buttons — stacked vertically for mobile */}
+      <button
+        className="flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-[11px] font-medium py-2 rounded-lg active:scale-95 transition-transform w-full"
+        onClick={handleCopy}
+      >
+        <Copy size={11} />
+        Copy Repo
+      </button>
+      <button
+        className="flex items-center justify-center gap-1 text-[11px] font-medium py-1.5 rounded-md text-muted-foreground active:opacity-70 transition-opacity"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/remixes/${app.id}`);
+        }}
+      >
+        Remixes
+        <ArrowRight size={11} />
+      </button>
     </div>
   );
 };

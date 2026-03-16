@@ -4,6 +4,7 @@ import { apps, getAllTemplates, getAllTypes, AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
 import FullscreenModal from "@/components/FullscreenModal";
 import { useNavigate } from "react-router-dom";
+import BottomNav from "@/components/BottomNav";
 import { fetchAllStats, incrementTryouts, incrementHearts, decrementHearts } from "@/lib/stats";
 
 const IDLE_TIMEOUT = 5 * 60 * 1000;
@@ -134,19 +135,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16">
       {/* Sticky top bar */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 pt-3 pb-2">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-lg font-semibold">⚡ ToolBox</h1>
-            <button
-              className="text-xs text-primary font-medium"
-              onClick={() => navigate("/ai-guide")}
-            >
-              AI Guide →
-            </button>
-          </div>
+          <h1 className="text-lg font-semibold mb-3">⚡ ToolBox</h1>
 
           {/* Search */}
           <div className="relative">
@@ -224,6 +217,8 @@ const Index = () => {
         onTemplateChange={handleTemplateChange}
         activeTemplate={activeTemplate}
       />
+
+      <BottomNav />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Copy, Clipboard } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import { platforms, promptLibrary, getBusinessTypes } from "@/data/ai-guide";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ const AiGuide = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
         <button
@@ -134,8 +135,7 @@ const AiGuide = () => {
         </div>
       </div>
 
-      {/* Bottom padding */}
-      <div className="h-8" />
+      <BottomNav />
     </div>
   );
 };
