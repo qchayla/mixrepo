@@ -110,6 +110,7 @@ const Remixes = () => {
           )}
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 };
