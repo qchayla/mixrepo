@@ -13,10 +13,10 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 glass border-t-0 rounded-t-2xl">
       <div className="flex justify-around items-center h-14">
         {tabs.map((tab) => {
-          const isActive = path === tab.id || (tab.id === "/" && path === "/");
+          const isActive = path === tab.id;
           const Icon = tab.icon;
           return (
             <button
@@ -27,12 +27,11 @@ const BottomNav = () => {
               }`}
             >
               <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[10px] font-semibold">{tab.label}</span>
             </button>
           );
         })}
       </div>
-      {/* Safe area for iOS */}
       <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
