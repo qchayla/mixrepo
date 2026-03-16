@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Copy, Clipboard } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import { platforms, promptLibrary, getBusinessTypes } from "@/data/ai-guide";
 import { toast } from "sonner";
