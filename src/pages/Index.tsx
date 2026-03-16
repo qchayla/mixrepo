@@ -219,6 +219,7 @@ const Index = () => {
         onClose={handleCloseModal}
         onTemplateChange={handleTemplateChange}
         activeTemplate={activeTemplate}
+        originRect={originRect}
       />
 
       <BottomNav />
