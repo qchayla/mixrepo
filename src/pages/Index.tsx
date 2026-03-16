@@ -225,6 +225,8 @@ const Index = () => {
         onTemplateChange={handleTemplateChange}
         activeTemplate={activeTemplate}
       />
+
+      <BottomNav />
     </div>
   );
 };
