@@ -110,6 +110,7 @@ const Index = () => {
   };
 
   const handleHeart = (appId: string) => {
+    const wasLiked = likedApps.has(appId);
     setLikedApps((prev) => {
       const next = new Set(prev);
       if (next.has(appId)) next.delete(appId);
@@ -117,6 +118,19 @@ const Index = () => {
       localStorage.setItem("liked_apps", JSON.stringify(Array.from(next)));
       return next;
     });
+    if (wasLiked) {
+      decrementHearts(appId);
+      setStatsMap(prev => ({
+        ...prev,
+        [appId]: { ...prev[appId], hearts: Math.max((prev[appId]?.hearts || 1) - 1, 0) }
+      }));
+    } else {
+      incrementHearts(appId);
+      setStatsMap(prev => ({
+        ...prev,
+        [appId]: { ...prev[appId], hearts: (prev[appId]?.hearts || 0) + 1 }
+      }));
+    }
   };
 
   return (
