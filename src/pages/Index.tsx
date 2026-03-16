@@ -1,23 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { apps, getAllTemplates, getAllTypes, AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
-import FullscreenModal from "@/components/FullscreenModal";
-import { useNavigate } from "react-router-dom";
+import AppDetailSheet from "@/components/AppDetailSheet";
 import BottomNav from "@/components/BottomNav";
 import { fetchAllStats, incrementTryouts, incrementHearts, decrementHearts } from "@/lib/stats";
-import { CardRect } from "@/components/FullscreenModal";
-
-const IDLE_TIMEOUT = 5 * 60 * 1000;
 
 const Index = () => {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentApp, setCurrentApp] = useState<AppMeta | null>(null);
-  const [iframeSrc, setIframeSrc] = useState("");
-  const [activeTemplate, setActiveTemplate] = useState("");
-  const [originRect, setOriginRect] = useState<CardRect | null>(null);
+  const [detailApp, setDetailApp] = useState<AppMeta | null>(null);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [scrollToScreenshots, setScrollToScreenshots] = useState(false);
   const [likedApps, setLikedApps] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem("liked_apps");
@@ -27,37 +21,28 @@ const Index = () => {
     }
   });
   const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
-  const lastViewedAppId = useRef<string | null>(null);
-  const idleTimer = useRef<ReturnType<typeof setTimeout>>();
-  const navigate = useNavigate();
 
-  // Fetch stats from Supabase
   useEffect(() => {
     fetchAllStats().then(setStatsMap);
+  }, []);
+
+  // Check URL for shared tool
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const toolId = params.get("tool");
+    if (toolId) {
+      const app = apps.find((a) => a.id === toolId);
+      if (app) {
+        setDetailApp(app);
+        setScrollToScreenshots(false);
+        setDetailVisible(true);
+      }
+    }
   }, []);
 
   const allTemplates = getAllTemplates();
   const allTypes = getAllTypes();
   const filterChips = [...allTypes, ...allTemplates];
-
-  // Idle cleanup
-  useEffect(() => {
-    const resetIdle = () => {
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-      idleTimer.current = setTimeout(() => {
-        setIframeSrc("");
-        lastViewedAppId.current = null;
-      }, IDLE_TIMEOUT);
-    };
-    window.addEventListener("touchstart", resetIdle);
-    window.addEventListener("click", resetIdle);
-    resetIdle();
-    return () => {
-      window.removeEventListener("touchstart", resetIdle);
-      window.removeEventListener("click", resetIdle);
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-    };
-  }, []);
 
   const filteredApps = apps.filter((app) => {
     const matchesSearch =
@@ -71,47 +56,19 @@ const Index = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const handleTapCard = useCallback(
-    (app: AppMeta, rect: DOMRect) => {
-      setOriginRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
-      // Increment tryouts
-      incrementTryouts(app.id);
-      setStatsMap(prev => ({
-        ...prev,
-        [app.id]: { ...prev[app.id], tryouts: (prev[app.id]?.tryouts || app.tryouts) + 1 }
-      }));
+  const handleTapScreenshot = useCallback((app: AppMeta, _rect: DOMRect) => {
+    setDetailApp(app);
+    setScrollToScreenshots(true);
+    setDetailVisible(true);
+  }, []);
 
-      if (lastViewedAppId.current && lastViewedAppId.current !== app.id) {
-        setIframeSrc("about:blank");
-        setTimeout(() => {
-          setIframeSrc(app.url);
-          setCurrentApp(app);
-          setActiveTemplate("");
-          setModalVisible(true);
-          lastViewedAppId.current = app.id;
-        }, 50);
-      } else if (lastViewedAppId.current === app.id) {
-        setModalVisible(true);
-      } else {
-        setIframeSrc(app.url);
-        setCurrentApp(app);
-        setActiveTemplate("");
-        setModalVisible(true);
-        lastViewedAppId.current = app.id;
-      }
-    },
-    []
-  );
+  const handleTapName = useCallback((app: AppMeta) => {
+    setDetailApp(app);
+    setScrollToScreenshots(false);
+    setDetailVisible(true);
+  }, []);
 
-  const handleCloseModal = () => setModalVisible(false);
-
-  const handleTemplateChange = (template: string) => {
-    if (!currentApp) return;
-    setActiveTemplate(template);
-    const url = new URL(currentApp.url);
-    url.searchParams.set("template", template);
-    setIframeSrc(url.toString());
-  };
+  const handleCloseDetail = () => setDetailVisible(false);
 
   const handleHeart = (appId: string) => {
     const wasLiked = likedApps.has(appId);
@@ -124,38 +81,41 @@ const Index = () => {
     });
     if (wasLiked) {
       decrementHearts(appId);
-      setStatsMap(prev => ({
+      setStatsMap((prev) => ({
         ...prev,
-        [appId]: { ...prev[appId], hearts: Math.max((prev[appId]?.hearts || 1) - 1, 0) }
+        [appId]: { ...prev[appId], hearts: Math.max((prev[appId]?.hearts || 1) - 1, 0) },
       }));
     } else {
       incrementHearts(appId);
-      setStatsMap(prev => ({
+      setStatsMap((prev) => ({
         ...prev,
-        [appId]: { ...prev[appId], hearts: (prev[appId]?.hearts || 0) + 1 }
+        [appId]: { ...prev[appId], hearts: (prev[appId]?.hearts || 0) + 1 },
       }));
     }
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="min-h-screen bg-background pb-20">
       {/* Sticky top bar */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 pt-3 pb-2">
-          <h1 className="text-lg font-semibold mb-3">⚡ ToolBox</h1>
+      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles size={18} className="text-primary" />
+            <h1 className="text-lg font-bold font-display gradient-text">ToolBox</h1>
+          </div>
 
           {/* Search */}
           <div className="relative">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <input
               type="text"
               placeholder="Search tools..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-secondary rounded-lg pl-9 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
+              className="w-full glass rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60 font-medium"
             />
           </div>
         </div>
@@ -163,10 +123,10 @@ const Index = () => {
         {/* Filter chips */}
         <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
           <button
-            className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-medium shrink-0 transition-colors ${
+            className={`text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap font-semibold shrink-0 transition-all duration-200 ${
               !activeFilter
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground"
+                ? "bg-primary text-primary-foreground glow-primary"
+                : "glass text-secondary-foreground"
             }`}
             onClick={() => setActiveFilter(null)}
           >
@@ -175,10 +135,10 @@ const Index = () => {
           {filterChips.map((chip) => (
             <button
               key={chip}
-              className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-medium shrink-0 transition-colors ${
+              className={`text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap font-semibold shrink-0 transition-all duration-200 ${
                 activeFilter === chip
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
+                  ? "bg-primary text-primary-foreground glow-primary"
+                  : "glass text-secondary-foreground"
               }`}
               onClick={() =>
                 setActiveFilter(activeFilter === chip ? null : chip)
@@ -191,13 +151,14 @@ const Index = () => {
       </div>
 
       {/* Card grid */}
-      <div className="px-4 py-4 grid grid-cols-2 gap-2">
+      <div className="px-3 py-4 grid grid-cols-2 gap-3">
         {filteredApps.map((app) => (
           <ToolCard
             key={app.id}
             app={app}
             isLiked={likedApps.has(app.id)}
-            onTap={handleTapCard}
+            onTapScreenshot={handleTapScreenshot}
+            onTapName={handleTapName}
             onHeart={handleHeart}
             hearts={statsMap[app.id]?.hearts ?? app.hearts}
             tryouts={statsMap[app.id]?.tryouts ?? app.tryouts}
@@ -211,15 +172,16 @@ const Index = () => {
         </div>
       )}
 
-      {/* Fullscreen modal (single iframe) */}
-      <FullscreenModal
-        app={currentApp}
-        visible={modalVisible}
-        iframeSrc={iframeSrc}
-        onClose={handleCloseModal}
-        onTemplateChange={handleTemplateChange}
-        activeTemplate={activeTemplate}
-        originRect={originRect}
+      {/* Detail sheet */}
+      <AppDetailSheet
+        app={detailApp}
+        visible={detailVisible}
+        onClose={handleCloseDetail}
+        scrollToScreenshots={scrollToScreenshots}
+        isLiked={detailApp ? likedApps.has(detailApp.id) : false}
+        onHeart={handleHeart}
+        hearts={detailApp ? statsMap[detailApp.id]?.hearts ?? detailApp.hearts : 0}
+        tryouts={detailApp ? statsMap[detailApp.id]?.tryouts ?? detailApp.tryouts : 0}
       />
 
       <BottomNav />
