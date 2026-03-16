@@ -70,6 +70,13 @@ const Index = () => {
 
   const handleTapCard = useCallback(
     (app: AppMeta) => {
+      // Increment tryouts
+      incrementTryouts(app.id);
+      setStatsMap(prev => ({
+        ...prev,
+        [app.id]: { ...prev[app.id], tryouts: (prev[app.id]?.tryouts || app.tryouts) + 1 }
+      }));
+
       if (lastViewedAppId.current && lastViewedAppId.current !== app.id) {
         setIframeSrc("about:blank");
         setTimeout(() => {
