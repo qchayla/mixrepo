@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, Sun, Moon } from "lucide-react";
 import { apps, getAllTemplates, getAllTypes, AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
 import AppDetailSheet from "@/components/AppDetailSheet";
+import { useTheme } from "@/hooks/useTheme";
 import BottomNav from "@/components/BottomNav";
 import { fetchAllStats, incrementHearts, decrementHearts } from "@/lib/stats";
 import { useLikedApps } from "@/hooks/useLikedApps";
