@@ -230,10 +230,10 @@ const FullscreenModal = ({
           transformOrigin: "center center",
         }}
       >
-        {/* Swipe handle / drag zone */}
+        {/* Swipe handle / drag zone — sits between close button */}
         <div
-          className="absolute top-0 left-0 right-0 z-[60] flex flex-col items-center"
-          style={{ height: "60px", touchAction: "none" }}
+          className="absolute top-0 left-16 right-0 z-[55] flex justify-center"
+          style={{ height: "48px", touchAction: "none" }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
