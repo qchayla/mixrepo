@@ -5,7 +5,7 @@ import ToolCard from "@/components/ToolCard";
 import FullscreenModal from "@/components/FullscreenModal";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { fetchAllStats, incrementTryouts, incrementHearts, decrementHearts } from "@/lib/stats";
+import { CardRect } from "@/components/FullscreenModal";
 
 const IDLE_TIMEOUT = 5 * 60 * 1000;
 
