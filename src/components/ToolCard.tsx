@@ -8,6 +8,8 @@ interface ToolCardProps {
   isLiked: boolean;
   onTap: (app: AppMeta) => void;
   onHeart: (appId: string) => void;
+  hearts: number;
+  tryouts: number;
 }
 
 const typeColors: Record<string, string> = {

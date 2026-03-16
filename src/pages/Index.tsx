@@ -203,6 +203,8 @@ const Index = () => {
             isLiked={likedApps.has(app.id)}
             onTap={handleTapCard}
             onHeart={handleHeart}
+            hearts={statsMap[app.id]?.hearts ?? app.hearts}
+            tryouts={statsMap[app.id]?.tryouts ?? app.tryouts}
           />
         ))}
       </div>
