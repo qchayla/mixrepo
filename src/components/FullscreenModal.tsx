@@ -22,6 +22,9 @@ interface FullscreenModalProps {
   originRect: CardRect | null;
 }
 
+const SWIPE_THRESHOLD = 100;
+const SWIPE_VELOCITY_THRESHOLD = 0.4;
+
 const FullscreenModal = ({
   app,
   visible,
@@ -37,10 +40,14 @@ const FullscreenModal = ({
   const [animState, setAnimState] = useState<AnimState>("hidden");
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Swipe state
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartRef = useRef<{ y: number; time: number } | null>(null);
+
   // Handle open
   useEffect(() => {
     if (visible && animState === "hidden") {
-      // Force a layout read then start expanding
       setAnimState("expanding");
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -68,33 +75,58 @@ const FullscreenModal = ({
   const handleLoad = () => setLoaded(true);
 
   const handleClose = useCallback(() => {
+    setDragY(0);
+    setIsDragging(false);
     setAnimState("collapsing");
     setTimeout(() => {
       setAnimState("hidden");
       onClose();
-    }, 280);
+    }, 300);
   }, [onClose]);
+
+  // Swipe-down handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Only track touches on the drag handle area (top 60px)
+    const touch = e.touches[0];
+    touchStartRef.current = { y: touch.clientY, time: Date.now() };
+    setIsDragging(true);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || !isDragging) return;
+    const touch = e.touches[0];
+    const dy = Math.max(0, touch.clientY - touchStartRef.current.y);
+    setDragY(dy);
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartRef.current) return;
+    const elapsed = Date.now() - touchStartRef.current.time;
+    const velocity = dragY / Math.max(elapsed, 1);
+
+    if (dragY > SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD) {
+      handleClose();
+    } else {
+      // Snap back
+      setDragY(0);
+    }
+    setIsDragging(false);
+    touchStartRef.current = null;
+  }, [dragY, handleClose]);
 
   // Compute the transform for the "card origin" position
   const getOriginStyle = (): React.CSSProperties => {
     if (!originRect) {
-      return {
-        opacity: 0,
-        transform: "scale(0.85)",
-        borderRadius: "12px",
-      };
+      return { opacity: 0, transform: "scale(0.85)", borderRadius: "12px" };
     }
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const scaleX = originRect.width / vw;
     const scaleY = originRect.height / vh;
-    // Translate from center of screen to center of card
     const cardCenterX = originRect.left + originRect.width / 2;
     const cardCenterY = originRect.top + originRect.height / 2;
-    const screenCenterX = vw / 2;
-    const screenCenterY = vh / 2;
-    const tx = cardCenterX - screenCenterX;
-    const ty = cardCenterY - screenCenterY;
+    const tx = cardCenterX - vw / 2;
+    const ty = cardCenterY - vh / 2;
 
     return {
       transform: `translate(${tx}px, ${ty}px) scale(${scaleX}, ${scaleY})`,
@@ -109,8 +141,13 @@ const FullscreenModal = ({
     opacity: 1,
   });
 
-  // Determine container style based on anim state
+  // Container style based on anim state + drag
   let containerStyle: React.CSSProperties;
+  const dragProgress = Math.min(dragY / 400, 1);
+  const dragScale = 1 - dragProgress * 0.08;
+  const dragRadius = dragProgress * 20;
+  const dragOpacity = 1 - dragProgress * 0.3;
+
   switch (animState) {
     case "hidden":
       containerStyle = { display: "none" };
@@ -123,11 +160,21 @@ const FullscreenModal = ({
       };
       break;
     case "expanded":
-      containerStyle = {
-        ...getExpandedStyle(),
-        display: "flex",
-        willChange: "auto",
-      };
+      if (isDragging && dragY > 0) {
+        containerStyle = {
+          display: "flex",
+          transform: `translateY(${dragY}px) scale(${dragScale})`,
+          borderRadius: `${dragRadius}px`,
+          opacity: dragOpacity,
+          willChange: "transform, border-radius, opacity",
+        };
+      } else {
+        containerStyle = {
+          ...getExpandedStyle(),
+          display: "flex",
+          willChange: "auto",
+        };
+      }
       break;
     case "collapsing":
       containerStyle = {
@@ -138,17 +185,37 @@ const FullscreenModal = ({
       break;
   }
 
+  // Bounce easing for expand, smooth spring for collapse
+  const expandCurve = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+  const collapseCurve = "cubic-bezier(0.32, 0.72, 0, 1)";
+
+  const getTransition = () => {
+    if (animState === "expanding") {
+      return `transform 320ms ${expandCurve}, border-radius 320ms ${expandCurve}, opacity 200ms ease`;
+    }
+    if (animState === "collapsing") {
+      return `transform 300ms ${collapseCurve}, border-radius 300ms ${collapseCurve}, opacity 200ms ease`;
+    }
+    // Snap-back when drag released without closing
+    if (!isDragging && dragY === 0 && animState === "expanded") {
+      return `transform 250ms ${expandCurve}, border-radius 250ms ease, opacity 200ms ease`;
+    }
+    return "none";
+  };
+
   const thumb = app ? thumbnails[app.id] : undefined;
   const showContent = animState === "expanded" || animState === "collapsing";
+  const backdropOpacity = animState === "expanded" ? (isDragging ? 1 - dragProgress * 0.6 : 1) : 0;
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/30 transition-opacity duration-300"
+        className="fixed inset-0 z-40 bg-foreground/30"
         style={{
-          opacity: animState === "expanded" ? 1 : 0,
+          opacity: backdropOpacity,
           pointerEvents: animState === "hidden" ? "none" : "auto",
+          transition: isDragging ? "none" : "opacity 300ms ease",
         }}
         onClick={handleClose}
       />
@@ -159,14 +226,29 @@ const FullscreenModal = ({
         className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden"
         style={{
           ...containerStyle,
-          transition:
-            animState === "expanding" || animState === "collapsing"
-              ? "transform 280ms cubic-bezier(0.32, 0.72, 0, 1), border-radius 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease"
-              : "none",
+          transition: getTransition(),
           transformOrigin: "center center",
         }}
       >
-        {/* Close button — always visible */}
+        {/* Swipe handle / drag zone */}
+        <div
+          className="absolute top-0 left-0 right-0 z-[60] flex flex-col items-center"
+          style={{ height: "60px", touchAction: "none" }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Drag indicator pill */}
+          <div
+            className="mt-2 w-9 h-1 rounded-full bg-muted-foreground/30"
+            style={{
+              opacity: showContent ? 1 : 0,
+              transition: "opacity 200ms ease 150ms",
+            }}
+          />
+        </div>
+
+        {/* Close button */}
         <button
           className="absolute top-3 left-3 z-50 w-12 h-12 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center shadow-lg active:scale-90 transition-all duration-150"
           style={{
@@ -181,7 +263,7 @@ const FullscreenModal = ({
         {/* App name header */}
         {app && (
           <div
-            className="pt-4 pb-2 text-center shrink-0"
+            className="pt-5 pb-2 text-center shrink-0"
             style={{
               opacity: showContent ? 1 : 0,
               transform: showContent ? "translateY(0)" : "translateY(-8px)",
@@ -194,7 +276,7 @@ const FullscreenModal = ({
 
         {/* Iframe area */}
         <div className="flex-1 relative overflow-hidden">
-          {/* Show thumbnail as preview during expand animation */}
+          {/* Thumbnail during expand */}
           {thumb && !showContent && (
             <img
               src={thumb}
@@ -213,14 +295,17 @@ const FullscreenModal = ({
               </p>
               <button
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium active:scale-95 transition-transform"
-                onClick={() =>
-                  app && window.open(app.url, "_blank", "noopener")
-                }
+                onClick={() => app && window.open(app.url, "_blank", "noopener")}
               >
                 Open in browser →
               </button>
             </div>
           ) : null}
+
+          {/* Pointer overlay to prevent iframe from stealing touches during drag */}
+          {isDragging && (
+            <div className="absolute inset-0 z-10" />
+          )}
 
           <iframe
             ref={iframeRef}
