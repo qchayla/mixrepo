@@ -208,8 +208,8 @@ const AppDetailSheet = ({
 
         {/* Scrollable content */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-28">
-          {/* Swipeable screenshots */}
-          <div ref={screenshotRef} className="px-4">
+          {/* Swipeable screenshots — sticky so they stay visible above text when scrolling */}
+          <div ref={screenshotRef} className="px-4 relative z-10">
             {appScreenshots.length > 0 && (
               <div className="relative">
                 <div
@@ -222,15 +222,16 @@ const AppDetailSheet = ({
                     <div
                       key={i}
                       className="w-full shrink-0 snap-center"
+                      style={{ aspectRatio: "3/4" }}
                     >
                       <img
                         src={src}
                         alt={`${app.name} screenshot ${i + 1}`}
-                        className="w-full object-cover rounded-2xl"
+                        className="w-full h-full object-cover rounded-2xl"
                         style={{
                           opacity: isVisible ? 1 : 0,
                           transform: isVisible ? "scale(1)" : "scale(0.95)",
-                          transition: `opacity 400ms ease ${i * 50}ms, transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 50}ms`,
+                          transition: `opacity 400ms ease ${100 + i * 80}ms, transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1) ${100 + i * 80}ms`,
                         }}
                       />
                     </div>
