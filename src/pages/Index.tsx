@@ -85,9 +85,21 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
         <div className="px-4 pt-4 pb-2">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={18} className="text-primary" />
-            <h1 className="text-lg font-bold font-display gradient-text">ToolBox</h1>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-primary" />
+              <h1 className="text-lg font-bold font-display gradient-text">ToolBox</h1>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-all duration-300"
+            >
+              {theme === "dark" ? (
+                <Sun size={16} className="text-amber-400" />
+              ) : (
+                <Moon size={16} className="text-primary" />
+              )}
+            </button>
           </div>
           <div className="relative">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
