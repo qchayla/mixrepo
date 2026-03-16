@@ -12,7 +12,7 @@ const Remixes = () => {
 
   if (!app) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground text-sm">App not found</p>
       </div>
     );
