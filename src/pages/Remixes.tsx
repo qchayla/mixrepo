@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Copy, Eye } from "lucide-react";
 import { apps, getRemixesForApp } from "@/data/apps";
 import { toast } from "sonner";
+import BottomNav from "@/components/BottomNav";
 
 const Remixes = () => {
   const { appId } = useParams<{ appId: string }>();
