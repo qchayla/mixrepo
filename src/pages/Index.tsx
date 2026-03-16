@@ -83,7 +83,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-20">
-      <div className="sticky top-0 z-40 bg-themed-gradient/90 backdrop-blur-xl border-b border-border/50" style={{ backgroundAttachment: "fixed" }}>
+      <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-border/50" style={{ background: "hsl(var(--glass-bg))" }}>
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
