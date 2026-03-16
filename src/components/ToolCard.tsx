@@ -82,7 +82,13 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
                 size={13}
                 className={isLiked ? "fill-coral text-coral" : ""}
               />
-              {app.hearts}
+              {hearts}
+            </button>
+            <span className="flex items-center gap-1">
+              <Eye size={13} />
+              {tryouts}
+            </span>
+          </div>
             </button>
             <span className="flex items-center gap-1">
               <Eye size={13} />
