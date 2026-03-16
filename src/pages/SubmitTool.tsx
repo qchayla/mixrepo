@@ -22,7 +22,7 @@ const SubmitTool = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen pb-20">
         <div className="px-4 py-3 border-b border-border/50">
           <button className="flex items-center gap-2 text-sm font-semibold font-display active:opacity-70" onClick={() => navigate("/")}>
             <ArrowLeft size={18} /> Back
@@ -44,8 +44,8 @@ const SubmitTool = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50 px-4 py-3">
+    <div className="min-h-screen pb-20">
+      <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-border/50 px-4 py-3" style={{ background: "hsl(var(--glass-bg))" }}>
         <button className="flex items-center gap-2 text-sm font-semibold font-display active:opacity-70" onClick={() => navigate("/")}>
           <ArrowLeft size={18} /> Back
         </button>

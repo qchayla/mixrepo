@@ -43,7 +43,7 @@
     --electric: 190 95% 50%;
 
     --glass-bg: 240 6% 10% / 0.6;
-    --glass-border: 240 4% 16% / 0.5;
+    --glass-border: 240 4% 20% / 0.4;
 
     --sidebar-background: 240 6% 7%;
     --sidebar-foreground: 240 5% 65%;
@@ -53,11 +53,13 @@
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 240 4% 14%;
     --sidebar-ring: 262 83% 58%;
+
+    --bg-gradient: linear-gradient(145deg, hsl(232 40% 8%) 0%, hsl(258 45% 12%) 50%, hsl(240 35% 6%) 100%);
   }
 
   /* ─── Light Mode ─── */
   .light {
-    --background: 0 0% 98%;
+    --background: 180 20% 97%;
     --foreground: 240 10% 8%;
 
     --card: 0 0% 100%;
@@ -69,10 +71,10 @@
     --primary: 262 83% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 6% 93%;
+    --secondary: 180 10% 93%;
     --secondary-foreground: 240 5% 35%;
 
-    --muted: 240 5% 92%;
+    --muted: 180 8% 91%;
     --muted-foreground: 240 4% 46%;
 
     --accent: 173 80% 36%;
@@ -81,8 +83,8 @@
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
+    --border: 180 8% 88%;
+    --input: 180 8% 88%;
     --ring: 262 83% 55%;
 
     --coral: 346 100% 58%;
@@ -90,8 +92,8 @@
     --glow: 262 83% 55%;
     --electric: 190 90% 42%;
 
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 240 6% 90% / 0.6;
+    --glass-bg: 0 0% 100% / 0.65;
+    --glass-border: 180 8% 88% / 0.5;
 
     --sidebar-background: 0 0% 97%;
     --sidebar-foreground: 240 5% 40%;
@@ -99,8 +101,10 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 95%;
     --sidebar-accent-foreground: 240 10% 8%;
-    --sidebar-border: 240 6% 90%;
+    --sidebar-border: 180 8% 88%;
     --sidebar-ring: 262 83% 55%;
+
+    --bg-gradient: linear-gradient(145deg, hsl(185 35% 92%) 0%, hsl(60 40% 95%) 50%, hsl(45 45% 93%) 100%);
   }
 }
 
@@ -128,6 +132,9 @@
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric)));
   }
+  .bg-themed-gradient {
+    background: var(--bg-gradient);
+  }
 }
 
 @layer base {
@@ -136,9 +143,11 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-family: 'DM Sans', system-ui, sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    transition: color 0.4s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
