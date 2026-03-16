@@ -139,15 +139,7 @@ const Index = () => {
       {/* Sticky top bar */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 pt-3 pb-2">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-lg font-semibold">⚡ ToolBox</h1>
-            <button
-              className="text-xs text-primary font-medium"
-              onClick={() => navigate("/ai-guide")}
-            >
-              AI Guide →
-            </button>
-          </div>
+          <h1 className="text-lg font-semibold mb-3">⚡ ToolBox</h1>
 
           {/* Search */}
           <div className="relative">
