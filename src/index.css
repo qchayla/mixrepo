@@ -5,7 +5,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* ─── Dark Mode (default) ─── */
+  :root, .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 95%;
 
@@ -41,6 +42,9 @@
     --glow: 262 83% 58%;
     --electric: 190 95% 50%;
 
+    --glass-bg: 240 6% 10% / 0.6;
+    --glass-border: 240 4% 16% / 0.5;
+
     --sidebar-background: 240 6% 7%;
     --sidebar-foreground: 240 5% 65%;
     --sidebar-primary: 262 83% 58%;
@@ -49,6 +53,54 @@
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 240 4% 14%;
     --sidebar-ring: 262 83% 58%;
+  }
+
+  /* ─── Light Mode ─── */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 240 10% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 8%;
+
+    --primary: 262 83% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 6% 93%;
+    --secondary-foreground: 240 5% 35%;
+
+    --muted: 240 5% 92%;
+    --muted-foreground: 240 4% 46%;
+
+    --accent: 173 80% 36%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 262 83% 55%;
+
+    --coral: 346 100% 58%;
+    --success: 173 80% 36%;
+    --glow: 262 83% 55%;
+    --electric: 190 90% 42%;
+
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 240 6% 90% / 0.6;
+
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 240 5% 40%;
+    --sidebar-primary: 262 83% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 95%;
+    --sidebar-accent-foreground: 240 10% 8%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 262 83% 55%;
   }
 }
 
@@ -61,16 +113,20 @@
     display: none;
   }
   .glass {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
   }
   .glow-primary {
-    box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.35);
   }
   .glow-electric {
-    box-shadow: 0 0 20px -4px hsl(var(--electric) / 0.3);
+    box-shadow: 0 0 24px -4px hsl(var(--electric) / 0.25);
   }
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(262,83%,68%)] to-[hsl(190,95%,50%)];
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric)));
   }
 }
 
@@ -82,6 +138,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'DM Sans', system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
