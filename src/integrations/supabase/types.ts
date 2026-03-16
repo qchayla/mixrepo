@@ -37,7 +37,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrement_hearts: { Args: { _app_id: string }; Returns: undefined }
+      increment_hearts: { Args: { _app_id: string }; Returns: undefined }
+      increment_tryouts: { Args: { _app_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
