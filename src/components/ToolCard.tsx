@@ -1,6 +1,8 @@
-import { Heart, Eye } from "lucide-react";
+import { Heart, Eye, ArrowRight } from "lucide-react";
 import { AppMeta } from "@/data/apps";
 import { thumbnails } from "@/data/thumbnails";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface ToolCardProps {
   app: AppMeta;
@@ -20,10 +22,20 @@ const typeColors: Record<string, string> = {
 
 const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, tryouts }: ToolCardProps) => {
   const thumb = thumbnails[app.id];
+  const navigate = useNavigate();
+
+  const handleTryout = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(
+      `Pull this GitHub repo and deploy it for me: ${app.repo}`
+    );
+    toast.success("Prompt copied! Paste into your AI agent", { duration: 2000 });
+    setTimeout(() => navigate("/ai-guide"), 300);
+  };
 
   return (
     <div className="flex flex-col gap-0 group">
-      {/* Screenshot zone — tapping opens screenshot gallery */}
+      {/* Screenshot zone */}
       <div
         className="relative rounded-xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
         onClick={(e) => {
@@ -67,7 +79,7 @@ const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, t
         </div>
       </div>
 
-      {/* Name zone — tapping opens description view */}
+      {/* Name zone */}
       <div
         className="px-1 pt-2 pb-1 cursor-pointer active:opacity-70 transition-opacity"
         onClick={() => onTapName(app)}
@@ -76,8 +88,8 @@ const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, t
         <p className="text-[10px] text-muted-foreground truncate mt-0.5">{app.description}</p>
       </div>
 
-      {/* Heart */}
-      <div className="px-1 pb-1">
+      {/* Heart + Try It row */}
+      <div className="px-1 pb-1 flex items-center justify-between">
         <button
           className="flex items-center gap-1 text-[11px] text-muted-foreground active:scale-110 transition-transform"
           onClick={(e) => {
@@ -90,6 +102,14 @@ const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, t
             className={isLiked ? "fill-coral text-coral" : ""}
           />
           {hearts}
+        </button>
+
+        <button
+          className="flex items-center gap-1 text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary to-electric text-primary-foreground active:scale-95 transition-transform"
+          onClick={handleTryout}
+        >
+          Try It
+          <ArrowRight size={10} />
         </button>
       </div>
     </div>

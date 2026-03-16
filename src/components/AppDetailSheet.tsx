@@ -1,6 +1,6 @@
-import { X, Share2, Copy, ArrowRight, Heart } from "lucide-react";
+import { X, Share2, Copy, ArrowRight, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppMeta, getRemixesForApp } from "@/data/apps";
-import { thumbnails } from "@/data/thumbnails";
+import { screenshots } from "@/data/thumbnails";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useRef, useState, useCallback, useEffect } from "react";
@@ -30,13 +30,16 @@ const AppDetailSheet = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const screenshotRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const touchStartRef = useRef<{ y: number; time: number } | null>(null);
   const [animState, setAnimState] = useState<"hidden" | "entering" | "visible" | "leaving">("hidden");
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     if (visible && animState === "hidden") {
+      setActiveSlide(0);
       setAnimState("entering");
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setAnimState("visible"));
@@ -47,7 +50,7 @@ const AppDetailSheet = ({
   useEffect(() => {
     if (animState === "visible" && scrollRef.current) {
       if (scrollToScreenshots && screenshotRef.current) {
-        screenshotRef.current.scrollIntoView({ behavior: "instant", block: "start" });
+        scrollRef.current.scrollTop = 0;
       } else if (!scrollToScreenshots && descriptionRef.current) {
         descriptionRef.current.scrollIntoView({ behavior: "instant", block: "start" });
       }
@@ -70,7 +73,6 @@ const AppDetailSheet = ({
       `Pull this GitHub repo and deploy it for me: ${app.repo}`
     );
     toast.success("Prompt copied! Paste into your AI agent", { duration: 2000 });
-    // Navigate to AI Guide
     setTimeout(() => navigate("/ai-guide"), 300);
   };
 
@@ -89,11 +91,10 @@ const AppDetailSheet = ({
         toast.success("Link copied!");
       }
     } catch {
-      // User cancelled share
+      // cancelled
     }
   };
 
-  // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartRef.current = { y: e.touches[0].clientY, time: Date.now() };
     setIsDragging(true);
@@ -118,11 +119,28 @@ const AppDetailSheet = ({
     touchStartRef.current = null;
   }, [dragY, handleClose]);
 
+  // Carousel scroll handler
+  const handleCarouselScroll = useCallback(() => {
+    if (!carouselRef.current) return;
+    const el = carouselRef.current;
+    const slideWidth = el.offsetWidth;
+    const index = Math.round(el.scrollLeft / slideWidth);
+    setActiveSlide(index);
+  }, []);
+
+  const scrollToSlide = (index: number) => {
+    if (!carouselRef.current) return;
+    carouselRef.current.scrollTo({
+      left: index * carouselRef.current.offsetWidth,
+      behavior: "smooth",
+    });
+  };
+
   if (animState === "hidden") return null;
   if (!app) return null;
 
   const remixes = getRemixesForApp(app.id);
-  const thumb = thumbnails[app.id];
+  const appScreenshots = screenshots[app.id] || [];
   const isVisible = animState === "visible";
   const dragProgress = Math.min(dragY / 400, 1);
 
@@ -145,8 +163,6 @@ const AppDetailSheet = ({
           maxHeight: "92vh",
           transform: isVisible
             ? `translateY(${dragY}px)`
-            : animState === "entering"
-            ? "translateY(100%)"
             : "translateY(100%)",
           transition: isDragging ? "none" : "transform 350ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
@@ -162,7 +178,7 @@ const AppDetailSheet = ({
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
 
-        {/* Close + Share buttons */}
+        {/* Close + Share */}
         <div className="flex items-center justify-between px-4 pb-2">
           <button
             className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform"
@@ -192,23 +208,74 @@ const AppDetailSheet = ({
 
         {/* Scrollable content */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-28">
-          {/* Screenshots section */}
+          {/* Swipeable screenshots */}
           <div ref={screenshotRef} className="px-4">
-            {thumb && (
-              <div className="rounded-2xl overflow-hidden border border-border/50">
-                <img
-                  src={thumb}
-                  alt={app.name}
-                  className="w-full object-cover"
-                />
+            {appScreenshots.length > 0 && (
+              <div className="relative">
+                <div
+                  ref={carouselRef}
+                  className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar rounded-2xl"
+                  onScroll={handleCarouselScroll}
+                  style={{ scrollBehavior: "smooth" }}
+                >
+                  {appScreenshots.map((src, i) => (
+                    <div
+                      key={i}
+                      className="w-full shrink-0 snap-center"
+                    >
+                      <img
+                        src={src}
+                        alt={`${app.name} screenshot ${i + 1}`}
+                        className="w-full object-cover rounded-2xl"
+                        style={{
+                          opacity: isVisible ? 1 : 0,
+                          transform: isVisible ? "scale(1)" : "scale(0.95)",
+                          transition: `opacity 400ms ease ${i * 50}ms, transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 50}ms`,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Dot indicators */}
+                {appScreenshots.length > 1 && (
+                  <div className="flex justify-center gap-1.5 mt-3">
+                    {appScreenshots.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => scrollToSlide(i)}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          i === activeSlide
+                            ? "w-6 bg-primary"
+                            : "w-1.5 bg-muted-foreground/30"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Description section */}
+          {/* Description */}
           <div ref={descriptionRef} className="px-4 mt-6">
-            <h2 className="text-xl font-bold font-display">{app.name}</h2>
-            <div className="flex gap-1.5 mt-2 flex-wrap">
+            <h2
+              className="text-xl font-bold font-display"
+              style={{
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible ? "translateY(0)" : "translateY(12px)",
+                transition: "opacity 300ms ease 100ms, transform 300ms ease 100ms",
+              }}
+            >
+              {app.name}
+            </h2>
+            <div
+              className="flex gap-1.5 mt-2 flex-wrap"
+              style={{
+                opacity: isVisible ? 1 : 0,
+                transition: "opacity 300ms ease 150ms",
+              }}
+            >
               {[...app.type, ...app.templates].map((tag) => (
                 <span
                   key={tag}
@@ -218,7 +285,14 @@ const AppDetailSheet = ({
                 </span>
               ))}
             </div>
-            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+            <p
+              className="text-sm text-muted-foreground mt-4 leading-relaxed"
+              style={{
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible ? "translateY(0)" : "translateY(8px)",
+                transition: "opacity 300ms ease 200ms, transform 300ms ease 200ms",
+              }}
+            >
               {app.description}
             </p>
             <p className="text-xs text-muted-foreground/60 mt-2">
@@ -226,7 +300,7 @@ const AppDetailSheet = ({
             </p>
           </div>
 
-          {/* Remixes section */}
+          {/* Remixes */}
           {remixes.length > 0 && (
             <div className="px-4 mt-8">
               <h3 className="text-sm font-semibold font-display text-muted-foreground uppercase tracking-wider mb-3">
