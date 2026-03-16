@@ -135,8 +135,7 @@ const AiGuide = () => {
         </div>
       </div>
 
-      {/* Bottom padding */}
-      <div className="h-8" />
+      <BottomNav />
     </div>
   );
 };
