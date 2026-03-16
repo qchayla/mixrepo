@@ -15,6 +15,7 @@ const Index = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [scrollToScreenshots, setScrollToScreenshots] = useState(false);
   const { isLiked, toggleLike } = useLikedApps();
+  const { theme, toggleTheme } = useTheme();
   const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
 
   useEffect(() => {
