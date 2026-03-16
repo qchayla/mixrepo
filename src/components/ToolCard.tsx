@@ -89,12 +89,6 @@ const ToolCard = ({ app, isLiked, onTap, onHeart, hearts, tryouts }: ToolCardPro
               {tryouts}
             </span>
           </div>
-            </button>
-            <span className="flex items-center gap-1">
-              <Eye size={13} />
-              {app.tryouts}
-            </span>
-          </div>
         </div>
       </div>
 
