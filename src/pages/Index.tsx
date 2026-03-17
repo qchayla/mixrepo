@@ -1,12 +1,13 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Search, Sparkles, Sun, Moon } from "lucide-react";
-import { apps, getAllTemplates, getAllTypes, AppMeta } from "@/data/apps";
+import { AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
 import AppDetailSheet from "@/components/AppDetailSheet";
 import { useTheme } from "@/hooks/useTheme";
 import BottomNav from "@/components/BottomNav";
-import { fetchAllStats, incrementHearts, decrementHearts } from "@/lib/stats";
+import { incrementHearts, decrementHearts } from "@/lib/stats";
 import { useLikedApps } from "@/hooks/useLikedApps";
+import { useApps } from "@/hooks/useApps";
 
 const Index = () => {
   const [search, setSearch] = useState("");
@@ -16,13 +17,11 @@ const Index = () => {
   const [scrollToScreenshots, setScrollToScreenshots] = useState(false);
   const { isLiked, toggleLike } = useLikedApps();
   const { theme, toggleTheme } = useTheme();
-  const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
+  const { apps, isLoading, statsMap, getAllTemplates, getAllTypes } = useApps();
+  const [localStatsOverrides, setLocalStatsOverrides] = useState<Record<string, { hearts: number }>>({});
 
-  useEffect(() => {
-    fetchAllStats().then(setStatsMap);
-  }, []);
-
-  useEffect(() => {
+  // Open detail sheet from URL param on first load
+  useState(() => {
     const params = new URLSearchParams(window.location.search);
     const toolId = params.get("tool");
     if (toolId) {
@@ -33,7 +32,7 @@ const Index = () => {
         setDetailVisible(true);
       }
     }
-  }, []);
+  });
 
   const allTemplates = getAllTemplates();
   const allTypes = getAllTypes();
@@ -65,20 +64,22 @@ const Index = () => {
 
   const handleCloseDetail = () => setDetailVisible(false);
 
+  const getHearts = (appId: string) =>
+    localStatsOverrides[appId]?.hearts ?? statsMap[appId]?.hearts ?? apps.find(a => a.id === appId)?.hearts ?? 0;
+
+  const getTryouts = (appId: string) =>
+    statsMap[appId]?.tryouts ?? apps.find(a => a.id === appId)?.tryouts ?? 0;
+
   const handleHeart = (appId: string) => {
     const wasLiked = isLiked(appId);
     toggleLike(appId);
-    if (wasLiked) {
-      setStatsMap((prev) => ({
-        ...prev,
-        [appId]: { ...prev[appId], hearts: Math.max((prev[appId]?.hearts || 1) - 1, 0) },
-      }));
-    } else {
-      setStatsMap((prev) => ({
-        ...prev,
-        [appId]: { ...prev[appId], hearts: (prev[appId]?.hearts || 0) + 1 },
-      }));
-    }
+    const currentHearts = getHearts(appId);
+    setLocalStatsOverrides((prev) => ({
+      ...prev,
+      [appId]: {
+        hearts: wasLiked ? Math.max(currentHearts - 1, 0) : currentHearts + 1,
+      },
+    }));
   };
 
   return (
@@ -135,22 +136,30 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="px-3 py-4 grid grid-cols-2 gap-3">
-        {filteredApps.map((app) => (
-          <ToolCard
-            key={app.id}
-            app={app}
-            isLiked={isLiked(app.id)}
-            onTapScreenshot={handleTapScreenshot}
-            onTapName={handleTapName}
-            onHeart={handleHeart}
-            hearts={statsMap[app.id]?.hearts ?? app.hearts}
-            tryouts={statsMap[app.id]?.tryouts ?? app.tryouts}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="px-3 py-4 grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="glass rounded-2xl h-48 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="px-3 py-4 grid grid-cols-2 gap-3">
+          {filteredApps.map((app) => (
+            <ToolCard
+              key={app.id}
+              app={app}
+              isLiked={isLiked(app.id)}
+              onTapScreenshot={handleTapScreenshot}
+              onTapName={handleTapName}
+              onHeart={handleHeart}
+              hearts={getHearts(app.id)}
+              tryouts={getTryouts(app.id)}
+            />
+          ))}
+        </div>
+      )}
 
-      {filteredApps.length === 0 && (
+      {!isLoading && filteredApps.length === 0 && (
         <div className="px-4 py-12 text-center">
           <p className="text-muted-foreground text-sm">No tools found</p>
         </div>
@@ -163,8 +172,8 @@ const Index = () => {
         scrollToScreenshots={scrollToScreenshots}
         isLiked={detailApp ? isLiked(detailApp.id) : false}
         onHeart={handleHeart}
-        hearts={detailApp ? statsMap[detailApp.id]?.hearts ?? detailApp.hearts : 0}
-        tryouts={detailApp ? statsMap[detailApp.id]?.tryouts ?? detailApp.tryouts : 0}
+        hearts={detailApp ? getHearts(detailApp.id) : 0}
+        tryouts={detailApp ? getTryouts(detailApp.id) : 0}
       />
 
       <BottomNav />

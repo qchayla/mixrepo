@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LikedAppsProvider } from "@/hooks/useLikedApps";
 import { ThemeProvider } from "@/hooks/useTheme";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index.tsx";
 import Remixes from "./pages/Remixes.tsx";
 import AiGuide from "./pages/AiGuide.tsx";
@@ -19,16 +20,18 @@ const App = () => (
       <ThemeProvider>
         <LikedAppsProvider>
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/bookmarks" element={<Bookmarks />} />
-              <Route path="/remixes/:appId" element={<Remixes />} />
-              <Route path="/ai-guide" element={<AiGuide />} />
-              <Route path="/submit" element={<SubmitTool />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <ErrorBoundary>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/bookmarks" element={<Bookmarks />} />
+                <Route path="/remixes/:appId" element={<Remixes />} />
+                <Route path="/ai-guide" element={<AiGuide />} />
+                <Route path="/submit" element={<SubmitTool />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </ErrorBoundary>
         </LikedAppsProvider>
       </ThemeProvider>
     </TooltipProvider>

@@ -1,5 +1,6 @@
 import { X, Share2, Copy, ArrowRight, Heart } from "lucide-react";
-import { AppMeta, getRemixesForApp } from "@/data/apps";
+import { AppMeta } from "@/data/apps";
+import { useRemixes } from "@/hooks/useApps";
 import { screenshots } from "@/data/thumbnails";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -144,7 +145,7 @@ const AppDetailSheet = ({
   if (animState === "hidden") return null;
   if (!app) return null;
 
-  const remixes = getRemixesForApp(app.id);
+  const { data: remixes = [] } = useRemixes(app.id);
   const appScreenshots = screenshots[app.id] || [];
   const isVisible = animState === "visible";
   const dragProgress = Math.min(dragY / 400, 1);

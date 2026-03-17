@@ -1,13 +1,13 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Heart, ArrowRight, Copy, Sparkles } from "lucide-react";
-import { apps, AppMeta } from "@/data/apps";
+import { AppMeta } from "@/data/apps";
 import { thumbnails } from "@/data/thumbnails";
 import { useLikedApps } from "@/hooks/useLikedApps";
 import BottomNav from "@/components/BottomNav";
 import AppDetailSheet from "@/components/AppDetailSheet";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { fetchAllStats } from "@/lib/stats";
+import { useApps } from "@/hooks/useApps";
 
 const Bookmarks = () => {
   const { likedApps, toggleLike, isLiked } = useLikedApps();
@@ -15,13 +15,13 @@ const Bookmarks = () => {
   const [detailApp, setDetailApp] = useState<AppMeta | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [scrollToScreenshots, setScrollToScreenshots] = useState(false);
-  const [statsMap, setStatsMap] = useState<Record<string, { hearts: number; tryouts: number }>>({});
-
-  useEffect(() => {
-    fetchAllStats().then(setStatsMap);
-  }, []);
+  const { apps, statsMap } = useApps();
+  const [localStatsOverrides, setLocalStatsOverrides] = useState<Record<string, { hearts: number }>>({});
 
   const bookmarkedApps = apps.filter((a) => likedApps.has(a.id));
+
+  const getHearts = (appId: string) =>
+    localStatsOverrides[appId]?.hearts ?? statsMap[appId]?.hearts ?? apps.find(a => a.id === appId)?.hearts ?? 0;
 
   const handleCopyAll = () => {
     if (bookmarkedApps.length === 0) return;
@@ -35,16 +35,13 @@ const Bookmarks = () => {
   };
 
   const handleHeart = (appId: string) => {
-    toggleLike(appId);
-    // Update local stats optimistically
     const wasLiked = isLiked(appId);
-    setStatsMap((prev) => ({
+    toggleLike(appId);
+    const currentHearts = getHearts(appId);
+    setLocalStatsOverrides((prev) => ({
       ...prev,
       [appId]: {
-        ...prev[appId],
-        hearts: wasLiked
-          ? Math.max((prev[appId]?.hearts || 1) - 1, 0)
-          : (prev[appId]?.hearts || 0) + 1,
+        hearts: wasLiked ? Math.max(currentHearts - 1, 0) : currentHearts + 1,
       },
     }));
   };
@@ -151,7 +148,7 @@ const Bookmarks = () => {
                         }}
                       >
                         <Heart size={13} className="fill-coral text-coral" />
-                        <span className="text-muted-foreground">{statsMap[app.id]?.hearts ?? app.hearts}</span>
+                        <span className="text-muted-foreground">{getHearts(app.id)}</span>
                       </button>
                       <button
                         className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-gradient-to-r from-primary to-electric text-primary-foreground active:scale-95 transition-transform ml-auto"
@@ -183,7 +180,7 @@ const Bookmarks = () => {
         scrollToScreenshots={scrollToScreenshots}
         isLiked={detailApp ? isLiked(detailApp.id) : false}
         onHeart={handleHeart}
-        hearts={detailApp ? statsMap[detailApp.id]?.hearts ?? detailApp.hearts : 0}
+        hearts={detailApp ? getHearts(detailApp.id) : 0}
         tryouts={detailApp ? statsMap[detailApp.id]?.tryouts ?? detailApp.tryouts : 0}
       />
 
