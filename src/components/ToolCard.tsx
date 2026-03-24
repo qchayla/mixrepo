@@ -1,8 +1,7 @@
 import { Heart, Eye, ArrowRight } from "lucide-react";
 import { AppMeta } from "@/data/apps";
-import { thumbnails } from "@/data/thumbnails";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { screenshots } from "@/data/thumbnails";
+import { useRef, useState, useCallback } from "react";
 
 interface ToolCardProps {
   app: AppMeta;
@@ -21,21 +20,28 @@ const typeColors: Record<string, string> = {
 };
 
 const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, tryouts }: ToolCardProps) => {
-  const thumb = thumbnails[app.id];
-  const navigate = useNavigate();
+  const appScreenshots = screenshots[app.id] || [];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    const slideWidth = el.offsetWidth / 2; // each slide is half the container
+    const index = Math.round(el.scrollLeft / slideWidth);
+    setActiveSlide(index);
+  }, []);
 
   const handleTryout = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(
-      `Pull this GitHub repo and deploy it for me: ${app.repo}`
-    );
-    toast.success("Prompt copied! Paste into your AI agent", { duration: 2000 });
-    setTimeout(() => navigate("/ai-guide"), 300);
+    window.open(app.url, "_blank", "noopener,noreferrer");
   };
+
+  const totalSlides = appScreenshots.length;
 
   return (
     <div className="flex flex-col gap-0 group">
-      {/* Screenshot zone */}
+      {/* Screenshot carousel zone */}
       <div
         className="relative rounded-xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
         onClick={(e) => {
@@ -44,20 +50,37 @@ const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, t
         }}
       >
         <div className="aspect-[4/3] bg-secondary overflow-hidden">
-          {thumb ? (
-            <img
-              src={thumb}
-              alt={app.name}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+          {appScreenshots.length > 0 ? (
+            <div
+              ref={scrollRef}
+              className="flex h-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
+              onScroll={handleScroll}
+              onClick={(e) => e.stopPropagation()}
+              onClickCapture={(e) => {
+                // Let the parent handle the click for opening detail
+                const rect = e.currentTarget.parentElement!.parentElement!.getBoundingClientRect();
+                onTapScreenshot(app, rect);
+              }}
+            >
+              {appScreenshots.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${app.name} ${i + 1}`}
+                  loading="lazy"
+                  className="w-1/2 h-full object-cover shrink-0 snap-start"
+                />
+              ))}
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-primary/20 to-electric/20">🔧</div>
+            <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-primary/20 to-electric/20">
+              🔧
+            </div>
           )}
         </div>
 
         {/* Tags overlay */}
-        <div className="absolute top-2 left-2 flex gap-1">
+        <div className="absolute top-2 left-2 flex gap-1 z-10">
           {app.type.slice(0, 2).map((tag) => (
             <span
               key={tag}
@@ -71,12 +94,28 @@ const ToolCard = ({ app, isLiked, onTapScreenshot, onTapName, onHeart, hearts, t
         </div>
 
         {/* Stats overlay */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-2 text-[10px] text-foreground/80">
+        <div className="absolute bottom-2 right-2 flex items-center gap-2 text-[10px] text-foreground/80 z-10">
           <span className="flex items-center gap-0.5 glass rounded-full px-2 py-0.5">
             <Eye size={10} />
             {tryouts}
           </span>
         </div>
+
+        {/* Dot indicators */}
+        {totalSlides > 2 && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+            {Array.from({ length: totalSlides - 1 }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  i === activeSlide
+                    ? "w-3 bg-white"
+                    : "w-1 bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Name zone */}

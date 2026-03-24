@@ -39,6 +39,8 @@ const AppDetailSheet = ({
   const [activeSlide, setActiveSlide] = useState(0);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
+  const { data: remixes = [] } = useRemixes(app?.id);
+
   useEffect(() => {
     if (visible && animState === "hidden") {
       setActiveSlide(0);
@@ -145,7 +147,6 @@ const AppDetailSheet = ({
   if (animState === "hidden") return null;
   if (!app) return null;
 
-  const { data: remixes = [] } = useRemixes(app.id);
   const appScreenshots = screenshots[app.id] || [];
   const isVisible = animState === "visible";
   const dragProgress = Math.min(dragY / 400, 1);

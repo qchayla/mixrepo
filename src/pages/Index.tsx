@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Search, Sparkles, Sun, Moon } from "lucide-react";
 import { AppMeta } from "@/data/apps";
 import ToolCard from "@/components/ToolCard";
@@ -21,7 +21,10 @@ const Index = () => {
   const [localStatsOverrides, setLocalStatsOverrides] = useState<Record<string, { hearts: number }>>({});
 
   // Open detail sheet from URL param on first load
-  useState(() => {
+  useEffect(() => {
+    // Only run once when apps are loaded
+    if (apps.length === 0 || isLoading) return;
+    
     const params = new URLSearchParams(window.location.search);
     const toolId = params.get("tool");
     if (toolId) {
@@ -32,7 +35,7 @@ const Index = () => {
         setDetailVisible(true);
       }
     }
-  });
+  }, []); // Empty deps - only run on initial mount
 
   const allTemplates = getAllTemplates();
   const allTypes = getAllTypes();
